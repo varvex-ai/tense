@@ -24,4 +24,15 @@ Format per entry:
 - Why: The unsolved core (cascade with preserved history) is what even XTDB punts on, and
   it matches the aesthetic that actually pulls (graphs that remember their history).
 
+### 2026-06-20 — Toy proof: cascade + history preservation works
+- Tried: Minimal `Store` with append-only log, `as_of(tx, valid)` bitemporal filter,
+  `derive(rule, tx, valid)` re-projection. Two base facts (Acme owns 40% of BetaCo,
+  BetaCo revenue $1M). Control rule: ownership > 50%. Retroactive correction to 60%.
+- Expected: All three assertions to pass; was unsure whether the pre-correction belief
+  would survive without any extra machinery.
+- Got: Green. Pre-correction belief is free — querying `as_of_tx=T1` after the T2
+  correction simply never sees the T2 log entry. No special "snapshot" needed.
+- Decided: Re-projection is the right default cascade strategy. Log as ADR-003.
+- Why: The cascade falls out of the bitemporal filter almost for free at 20 facts.
+
 <!-- next entry below -->

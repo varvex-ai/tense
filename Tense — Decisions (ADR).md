@@ -29,4 +29,13 @@ Load-bearing forks only. Rare (~10–15 over the whole thesis). Format:
 - Consequences: Keeps Tense a policy-agnostic substrate primitive, not a domain app. Tense
   stores provenance/derivation; the user owns business logic.
 
-<!-- Likely next ADR: re-projection vs stored provenance edges. Resolve by building. -->
+## ADR-003 — Re-projection vs stored provenance edges  (2026-06-20)
+- Context: When a base fact is corrected, how do derived facts pick up the change?
+- Options: A) Store derived facts and invalidate/recompute them on correction.
+  B) Never store derived facts — always re-project by replaying the rule against
+  `as_of(tx, valid)`.
+- Choice: Re-projection (B).
+- Consequences: Cascade is automatic and always correct; pre-correction beliefs are free
+  (just query at an earlier tx_time). Cost is O(facts × rules) per derive call, which is
+  fine at ≤20 facts. Stored edges become an option only when re-projection cost is
+  actually measured and felt. Rules out lazy invalidation graphs for now.
