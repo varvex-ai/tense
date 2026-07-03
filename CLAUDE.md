@@ -28,6 +28,13 @@ fact is corrected, the correction must ripple through everything derived from it
 both timelines, while every prior belief stays queryable. Even XTDB (the production
 leader) explicitly punts on this ("non-oblivious retroactivity"). That gap is Tense.
 
+**Relationship to Graphloom (keep the boundary clean):** Graphloom is the shippable
+sibling — it re-projects derived facts from an append-only log and never corrects them in
+place. Tense is the research thesis that goes *past* re-projection: whether a derived fact
+can be a stored, first-class bitemporal object that is corrected in place and cascades.
+The one thing that must never happen is Graphloom silently absorbing Tense's
+cascading-correction logic. In this repo we push the frontier; in Graphloom we do not.
+
 ---
 
 ## 2. How We Build
@@ -53,7 +60,8 @@ policy-agnostic is what keeps Tense a foundational primitive, not a domain app.
 **First design fork (resolve by building, not debating):** explicit provenance edges vs.
 re-projection from scratch. Start with re-projection (simplest, always correct, fine at 20
 facts). Only add stored edges when re-projection's cost is actually felt. Log the decision
-when made (see below).
+when made (see below). [Resolved 2026-06-20 as ADR-003: re-projection — but see the CENTRAL
+THESIS QUESTION in Open Questions on whether re-projection has an *expressiveness* ceiling.]
 
 **Git from line one.** This is a real repo. Commit working increments with terse messages.
 
@@ -107,10 +115,47 @@ instead of adding entries.
 
 ---
 
-## 4. The Checkpoint
+## 4. Model Routing
+
+Route work to the model that fits the job. Full table + the file-bus handoff live in
+`docs/routing-table.md`.
+
+- **Sonnet** — code and execution: the toy proofs, test scaffolds, running experiments,
+  mechanical edits.
+- **Opus** — architecture, ADRs, and the hard semantics calls: the bitemporal-cascade
+  questions, the expressiveness-ceiling question, what counts as a dependency.
+- **Fable** — **frontier reasoning, and here it earns its seat.** Tense is exactly the kind
+  of unsolved, novel-semantics problem Fable is for — non-oblivious retroactivity is open
+  research. Reach for it on the conceptual knots. **Auto-fallback caveat:** Fable can
+  silently fall back to another model, so never assume an answer actually came from Fable
+  and don't rely on it for a reproducible or load-bearing step. Treat its output as a lead
+  to verify by building — which fits "resolve by building, not debating" anyway.
+
+---
+
+## 5. The Loop & the File Bus
+
+- **Producer ≠ verifier.** The independent reviewer is ChatGPT — it reads the repo and
+  research logs, writes review reports, and proposes experiments/tests. It never authors
+  code or tests. See `AGENTS.md` and `docs/reviews/PROTOCOL.md`.
+- **Experiment/test-authoring is separate from review.** The reviewer proposes; the build
+  side authors.
+- **Update `sessions/STATE.md` every session** — the rolling snapshot (Now / In flight /
+  Blocked / Open frontier / Next) and the primary handoff artifact. The filesystem is the
+  message bus; no orchestration platform, no vector-DB memory.
+
+---
+
+## 6. The Checkpoint
 
 Done with the first milestone = on the 20-fact toy, a retroactive correction cascades
 correctly through derived facts AND every pre-correction belief is still queryable. That
-proves the primitive. Everything after is engineering.
+proves the primitive. **Single-hop is done (2026-06-20).**
+
+**Next step: the two-hop experiment — D → C → A.** Extend the toy to a derivation chain
+(D derived from C, C derived from A), retroactively correct A, and prove the correction
+cascades all the way to D while every pre-correction belief along the chain stays
+queryable. This is the first real stress test of non-oblivious retroactivity beyond one
+hop, and the most likely thing to force an answer on the central thesis question.
 
 The real validation later: one other engineer depends on it. Not market size. Dependency.
